@@ -1,0 +1,72 @@
+/******************************************************
+ * Programa: GPS GY‑NEO6MV2 ligado ao Arduino
+ *
+ * Instruções prévias (comente ou remova após instalação):
+ * 1. Baixe a biblioteca TinyGPS.h em:
+ *    https://qrgo.page.link/HMKe
+ * 2. Instale a TinyGPS no Arduino IDE (Sketch → Incluir Biblioteca → Adicionar .ZIP).
+ *    Tutorial de instalação:
+ *    https://qrgo.page.link/9bXx
+ ******************************************************/
+
+// Definições dos pinos de software serial para o GPS
+#define GPS_RX_PIN        4   // pino RX do Arduino ← TX do módulo GPS
+#define GPS_TX_PIN        3   // pino TX do Arduino → RX do módulo GPS
+#define GPS_SERIAL_BAUD 9600  // Baud rate do módulo GPS e do monitor serial
+
+// Bibliotecas necessárias
+#include <SoftwareSerial.h>  // Emula uma segunda porta serial via software
+#include <TinyGPS.h>         // Processamento dos dados do GPS
+
+// Objetos de comunicação
+TinyGPS      gps;                          // Instância do parser TinyGPS
+SoftwareSerial gpsSerial(GPS_RX_PIN, GPS_TX_PIN);  
+
+void setup() {
+  // Inicializa porta serial para debug/monitor
+  Serial.begin(GPS_SERIAL_BAUD);
+  // Inicializa a porta serial do GPS
+  gpsSerial.begin(GPS_SERIAL_BAUD);
+}
+
+void loop() {
+  // Variável para indicar se recebemos um novo pacote válido de GPS
+  bool newData = false;
+  unsigned long start = millis();
+
+  // Lê dados do GPS pelo período de 1 segundo
+  while (millis() - start < 1000) {
+    while (gpsSerial.available()) {
+      char c = gpsSerial.read();
+      // Alimenta o parser TinyGPS; retorna true quando um novo posicionamento é decodificado
+      if (gps.encode(c)) {
+        newData = true;
+      }
+    }
+  }
+
+  // Se tivermos novos dados, extraia e imprima no monitor serial
+  if (newData) {
+    float latitude, longitude;
+    unsigned long age;
+
+    // Recupera latitude, longitude e idade da informação
+    gps.f_get_position(&latitude, &longitude, &age);
+
+    // Exibe latitude e longitude (caso inválido, exibe 0)
+    Serial.print(F("LAT="));
+    Serial.print( latitude == TinyGPS::GPS_INVALID_F_ANGLE ? 0 : latitude, 6 );
+    Serial.print(F(" LONG="));
+    Serial.println( longitude == TinyGPS::GPS_INVALID_F_ANGLE ? 0 : longitude, 6 );
+
+    // Exibe número de satélites (caso inválido, exibe 0)
+    Serial.print(F("SAT="));
+    Serial.println( gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites() );
+
+    // Exibe HDOP (caso inválido, exibe 0)
+    Serial.print(F("HDOP="));
+    Serial.println( gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop() );
+
+    Serial.println();
+  }
+}
