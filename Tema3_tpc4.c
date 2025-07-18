@@ -53,11 +53,11 @@ void loop()
   conteudo.toUpperCase();
   if (conteudo.substring(1) == "ED 78 03 CA") //UID 1 - Chaveiro
   {
-    Serial.println("Ola MakerHero !");
+    Serial.println("Iniciar !");
     Serial.println();
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.print("Ola MakerHero !");
+    lcd.print("Iniciar !");
     lcd.setCursor(0,1);
     lcd.print("Acesso liberado!");
     delay(3000);
